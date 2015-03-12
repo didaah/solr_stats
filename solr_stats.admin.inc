@@ -123,6 +123,14 @@ function solr_stats_admin_stats_ajax($group_type) {
     $query['fl'] = '*';
   }
 
+  if (!empty($query['stats.field'])) {
+    $query['stats'] = 'on';
+  }
+
+  if (!empty($query['facet.field'])) {
+    $query['facet'] = 'on';
+  }
+
   if (!empty($query['facet'])) {
     if (empty($query['facet.limit'])) {
       $query['facet.limit'] = 500000;
