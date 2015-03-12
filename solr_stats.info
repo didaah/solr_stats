@@ -1,0 +1,10 @@
+<?php
+// $Id$
+
+$info = array(
+  'name' => 'solr stats',
+  'description' => '基于 solr 的数据统计扩展',
+  'ver' => '1.0',
+  'language' => 'zh-hans',
+);
+

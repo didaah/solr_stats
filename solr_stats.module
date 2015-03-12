@@ -1,0 +1,144 @@
+<?php
+// $Id$
+
+/**
+ * @Implement of hook_menu()
+ */
+function solr_stats_menu() {
+  $items = array();
+
+  $items['admin/solr/stats'] = array(
+    'title' => '数据统计',
+    'access_arguments' => array('solr stats admin view'),
+    'page_callback' => 'solr_stats_admin',
+    'file' => 'solr_stats.admin.inc',
+  );
+
+  foreach (solr_stats_get_group() as $key => $info) {
+    $items['admin/solr/stats/' . $key] = array(
+      'title' => $info['title'] . '数据统计',
+      'access_arguments' => array('solr stats admin ' . $key . ' view'),
+      'page_callback' => 'solr_stats_admin_stats',
+      'page_arguments' => array(3),
+      'file' => 'solr_stats.admin.inc',
+    );
+
+    $items['admin/solr/stats/' . $key . '/ajax'] = array(
+      'title' => $info['title'] . '统计处理',
+      'access_arguments' => array('solr stats admin ' . $key . ' view'),
+      'page_callback' => 'solr_stats_admin_stats_ajax',
+      'page_arguments' => array(3),
+      'file' => 'solr_stats.admin.inc',
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * @Implement of hook_perm()
+ */
+function solr_stats_perm() {
+  $perm =  array(
+    'solr stats admin view' => '统计项目选择',
+  );
+
+  foreach (solr_stats_get_group() as $key => $info) {
+    $perm['solr stats admin ' . $key . ' view'] = $info['title'] . ' 数据统计';
+  }
+
+  return $perm;
+}
+
+// public solr_stats_get_group() {{{ 
+/**
+ * solr_stats_get_group
+ *  获取所有统计分组
+ * 
+ * @access public
+ * @return array
+ */
+function solr_stats_get_group() {
+  static $data;
+
+  if (!isset($data)) {
+    $data = array();
+    if ($group = solr_get_search_group()) {
+      foreach ($group as $key => $info) {
+        if (!empty($info['stats'])) {
+          $data[$key] = $info;
+        }
+      }
+    }
+  }
+
+  return $data;
+}
+// }}}
+
+/**
+ * @Implement of hook_alter_admin_menus()
+ */
+function solr_stats_alter_admin_menus($module, &$menus) {
+  if ($module == 'solr') {
+    $menus[] = array(t('solr_stats', '数据统计'), 'admin/solr/stats');
+  }
+}
+
+// public solr_stats_query_form($group) {{{ 
+/**
+ * solr_stats_query_form
+ *  查询表单
+ * 
+ * @param array $type 
+ *  数据统计分组
+ * @access public
+ * @return array
+ */
+function solr_stats_query_form($group) {
+  $form = array(
+    'fields' => array(
+      'query' => array(),
+      'param' => array(),
+    ),
+    'settings' => array(
+      '#ajax_validate' => true,
+      '#ajax_submit' => array(
+        'options' => array(
+          'dataType' => 'script',
+          'url' => url('admin/solr/stats/' . $group['key'] . '/ajax'),
+        ),
+      ),
+    ),
+  );
+
+  $form['fields']['query']['q'] = array(
+    '#title' => t('solr_stats', '查询语句'),
+    '#type' => 'textarea',
+  );
+
+  $form['fields']['param']['default'] = array(
+    '#title' => t('solr_stats', '其它参数'),
+    '#type' => 'textarea',
+    '#description' => t('solr_stats', '一行一个参数，参数名与参数值以等号(=)分割，例如：facet=true'),
+  );
+
+  module_alter_all('solr_stats_query_form', $group, $form);
+
+  $form['fields']['button'] = array(
+    '#type' => 'submit',
+    '#weight' => 10000,
+  );
+
+  $form['fields']['body_wrapper'] = array(
+    '#type' => 'fieldset',
+    '#fieldset_legend' => t('solr_stats', '统计结果'),
+    '#fieldset_prefix' => 'asc',
+    '#fieldset_suffix' => 1,
+    '#weight' => 10001,
+  );
+
+  return $form;
+}
+// }}}
+
