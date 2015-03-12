@@ -158,6 +158,7 @@ function solr_stats_admin_stats_ajax($group_type) {
     '二线城市' => '(杭州 OR 南京  OR 济南  OR 重庆  OR 青岛  OR 大连  OR 宁波  OR 厦门  OR 成都  OR 武汉  OR 哈尔滨  OR 西安  OR 沈阳  OR 长春  OR 长沙  OR 福州  OR 郑州  OR 石家庄  OR 苏州  OR 佛山  OR 东莞  OR 无锡  OR 烟台  OR 太原  OR 合肥  OR 南昌  OR 南宁  OR 昆明  OR 温州  OR 淄博  OR 唐山)',
   );
 
+  module_alter_all('solr_stats_query_submit', $info, $query, $v);
   $result = $solr->query($query);
 
   $data = array(
@@ -247,8 +248,6 @@ function solr_stats_admin_stats_ajax($group_type) {
   }
 
   echo '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '")';
-
-  //print_r($data);
 
   exit;
 }

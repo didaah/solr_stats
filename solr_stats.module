@@ -90,7 +90,7 @@ function solr_stats_alter_admin_menus($module, &$menus) {
  * solr_stats_query_form
  *  查询表单
  * 
- * @param array $type 
+ * @param array $group 
  *  数据统计分组
  * @access public
  * @return array
