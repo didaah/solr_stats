@@ -200,15 +200,29 @@ function solr_stats_admin_stats_ajax($group_type) {
   }
   
   // stats 结果
-  if (!empty($result->stats)) {
+  if (!empty($result->stats) && !empty($result->stats->stats_fields->{$query['stats.field']})) {
+    $data['stats']['count'] = 1;
+    $data['stats']['items'] = $result->stats->stats_fields->{$query['stats.field']};
   }
-
 
   $output = '';
 
   if (!empty($data['count'])) {
     $output .= '<h2>默认统计</h2>';
     $output .= '<p>匹配的总记录：' . $data['count'] . '</p>';
+  }
+ 
+  if (!empty($data['stats']['count'])) {
+    $output .= '<h2>按 ' . $query['stats.field'] . ' 汇总统计</h2>';
+    $header = array();
+    $rows = array();
+    foreach ($data['stats']['items'] as $_k => $_v) {
+      if (!is_array($_v) && !is_object($_v)) {
+        $header[] = $_k;
+        $rows[] = $_v;
+      }
+    }
+    $output .= theme('table', $header, array($rows), array('class' => 'center_table'));
   }
   
   if (!empty($data['facet']['count'])) {
