@@ -139,18 +139,87 @@ function solr_stats_query_form($group) {
 
   $form['fields']['button'] = array(
     '#type' => 'submit',
+    '#prefix' => '<div id="solr_stats_query_form_button" class="form_item form_item_submit">',
+    '#weight' => 9999,
+  );
+
+  $form['fields']['export'] = array(
+    '#type' => 'submit',
+    '#value' => t('solr_stats', '导出数据'),
+    '#suffix' => '</div>',
     '#weight' => 10000,
   );
 
   $form['fields']['body_wrapper'] = array(
-    '#type' => 'fieldset',
-    '#fieldset_legend' => t('solr_stats', '统计结果'),
-    '#fieldset_prefix' => 'asc',
-    '#fieldset_suffix' => 1,
+    '#type' => 'value',
     '#weight' => 10001,
   );
+
+  dd_add_css(dd_get_path('module', 'solr_stats') . '/solr_stats.css');
 
   return $form;
 }
 // }}}
 
+// public solr_stats_get_field_label($group, $field_key) {{{ 
+/**
+ * solr_stats_get_field_label
+ * 
+ * @param mixed $group 
+ * @param mixed $field_key 
+ * @access public
+ * @return void
+ */
+function solr_stats_get_field_label($group, $field_key) {
+  $fields = array();
+  module_alter_all('solr_stats_get_fields_label', $group, $fields, $field_key);
+  return $fields[$field_key];
+}
+// }}}
+
+// public solr_stats_export_csv(array $data) {{{ 
+/**
+ * solr_stats_export_csv
+ * 
+ * @param array $data 
+ *  要导出的数据，格式：
+ *    array(
+ *      'title' => '文件名称', // 会自动加上后缀.csv
+ *      'rows' => array( // 输出的内容，一行一条
+ *        array('city', 'name', 'abc'),
+ *        array(1, 2, 3),
+ *      ),
+ *    )
+ * @access public
+ * @return void
+ */
+function solr_stats_export_csv(array $data) {
+  if (empty($data['rows']) || empty($data['title'])) exit;
+  $data['title'] .= '.csv';
+
+  $rows = array();
+  foreach ($data['rows'] as $v) {
+    if (is_array($v)) {
+      $rows[] = implode("\t", $v);
+    } else {
+      $rows[] = $v; 
+    }
+  }
+
+  header('Cache-control: private');
+  header('Content-type: text/csv; charset=UTF-16LE');
+  
+  if (empty($_SERVER['HTTP_USER_AGENT']) 
+    && preg_match('/firefox/i', $_SERVER['HTTP_USER_AGENT'])) {
+    header('Content-Disposition: attachment; filename*="utf8\'\'' . $data['title'] . '"');
+  } else {
+    header('Content-Disposition: attachment; filename="' . str_replace('+', '%20', urlencode($data['title'])) . '"');
+  }
+
+  // 输出BOM
+  echo chr(255) . chr(254);
+  echo mb_convert_encoding(implode("\n", $rows), 'UTF-16LE', 'UTF-8');
+
+  exit;
+}
+// }}}

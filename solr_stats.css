@@ -1,0 +1,19 @@
+/* $Id$ */
+
+#solr_stats_query_form_body_wrapper {
+  overflow: auto;
+}
+
+.solr_stats_view_rows_line {
+  background: #A2B5CD;
+}
+
+.solr_stats_view_rows_title {
+  font-weight: bold;
+}
+
+.solr_stats_view_export_link {
+  text-align: right;
+  border-bottom: 1px solid #eee;
+  padding: 8px 0;
+}
