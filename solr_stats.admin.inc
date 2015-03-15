@@ -91,6 +91,10 @@ function solr_stats_admin_stats_ajax($group_type) {
         $args[] = $key . ':' . $value;
       }
     }
+
+    if (!empty($v['query']['sid'])) {
+      $solr->custom_data['sid'] = $v['query']['sid'];
+    }
   }
 
   if (!empty($args)) {
@@ -103,7 +107,11 @@ function solr_stats_admin_stats_ajax($group_type) {
     foreach ($value as $text) {
       if (strpos($text, '=') !== false) {
         $_a = explode('=', $text, 2);
-        $query[$_a[0]] = $_a[1];
+        if (strpos($_a[0], '[]') !== false) {
+          $query[rtrim($_a[0], '[]')][] = $_a[1];
+        } else {
+          $query[$_a[0]] = $_a[1];
+        }
       }
     }
     unset($v['param']['default']);
@@ -111,7 +119,9 @@ function solr_stats_admin_stats_ajax($group_type) {
 
   if (!empty($v['param'])) {
     foreach ($v['param'] as $key => $value) {
-      $query[$key] = $value;
+      if (!empty($value)) {
+        $query[$key] = $value;
+      }
     }
   }
 
@@ -140,26 +150,9 @@ function solr_stats_admin_stats_ajax($group_type) {
     }
   }
 
-   $test = array(
-    '个人' => array(
-      'q' => 'param_t:是',
-      'rows' => 1,
-      'facet' => 'on',
-      'facet.limit' => 10000,
-      'facet.mincount' => 1,
-      //'facet.pivot' => 'param_r,param_m',
-      'facet.field' => 'param_m'
-    ),   
-  );
-
-  $city = array(
-    '全国' => '',
-    '一线城市' => '(北京 OR 上海 OR 广州 OR 深圳)',
-    '二线城市' => '(杭州 OR 南京  OR 济南  OR 重庆  OR 青岛  OR 大连  OR 宁波  OR 厦门  OR 成都  OR 武汉  OR 哈尔滨  OR 西安  OR 沈阳  OR 长春  OR 长沙  OR 福州  OR 郑州  OR 石家庄  OR 苏州  OR 佛山  OR 东莞  OR 无锡  OR 烟台  OR 太原  OR 合肥  OR 南昌  OR 南宁  OR 昆明  OR 温州  OR 淄博  OR 唐山)',
-  );
-
   module_alter_all('solr_stats_query_submit', $info, $query, $v);
   $result = $solr->query($query);
+  $output = '';
 
   $data = array(
     'count' => 0,
@@ -187,20 +180,50 @@ function solr_stats_admin_stats_ajax($group_type) {
   }
 
   // facet 结果
-  if (!empty($result->facet_counts) && !empty($result->facet_counts->facet_fields->{$query['facet.field']})) {
-    if (!empty($query['facet.pivot']) && 
-    $result->facet_counts->facet_pivot->{$query['facet.pivot']}) {
-      foreach ($result->facet_counts->facet_pivot->{$query['facet.pivot']} as $_o) {
-        $data['facet']['count'] += count($_o->pivot);
-      }
-    } else {
-      foreach ($result->facet_counts->facet_fields->{$query['facet.field']} as $_k => $o) {
-        $data['facet']['count']++;
-        if ($data['facet']['count'] < 2000 && empty($v['export'])) {
-          $data['facet']['items'][$_k] = $o;
-        }
+  if (!empty($result->facet_counts)) {
+    foreach ($result->facet_counts as $key => $r) {
+      if (empty($r)) continue;
+      switch ($key) {
+        case 'facet_fields':
+          foreach ($r as $field_key => $d) {
+            $d = (array) $d;
+            $output .= $field_key . ':' . count($d);
+            $output .= theme(
+              'table',
+              array_keys($d),
+              array(array_values($d)), 
+              array('class' => 'center_table')
+            );
+          }
+          //if ($data['facet']['count'] < 2000 && empty($v['export'])) {
+          //  $data['facet']['items'][$_k] = $o;
+          //}
+        break;
+        case 'facet_queries':
+          $r = (array) $r;
+          $output .= '区间统计:';
+          $output .= theme(
+            'table',
+            array_keys($r),
+            array(array_values($r)), 
+            array('class' => 'center_table')
+          );
+        break;
       }
     }
+    //if (!empty($query['facet.pivot']) && 
+    //$result->facet_counts->facet_pivot->{$query['facet.pivot']}) {
+    //  foreach ($result->facet_counts->facet_pivot->{$query['facet.pivot']} as $_o) {
+    //    $data['facet']['count'] += count($_o->pivot);
+    //  }
+    //} else {
+    //  foreach ($result->facet_counts->facet_fields->{$query['facet.field']} as $_k => $o) {
+    //    $data['facet']['count']++;
+    //    if ($data['facet']['count'] < 2000 && empty($v['export'])) {
+    //      $data['facet']['items'][$_k] = $o;
+    //    }
+    //  }
+    //}
   }
 
   // group 结果
@@ -213,8 +236,6 @@ function solr_stats_admin_stats_ajax($group_type) {
     $data['stats']['count'] = 1;
     $data['stats']['items'] = $result->stats->stats_fields->{$query['stats.field']};
   }
-
-  $output = '';
 
   if (!empty($data['count'])) {
     $output .= '<h2>默认统计</h2>';
