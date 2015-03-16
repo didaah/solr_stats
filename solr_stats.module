@@ -167,7 +167,7 @@ function solr_stats_get_field_label($group, $field_key) {
 
   if (!empty($group['fields'])) {
     foreach ($group['fields'] as $key => $info) {
-      $fields[$key] = $info['name'];
+      $fields[$key] = !empty($info['name']) ? $info['name'] : $key;
     }
   }
 

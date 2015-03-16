@@ -187,11 +187,29 @@ function solr_stats_admin_stats_ajax($group_type) {
             $d = (array) $d;
             if (empty($d)) continue;
             $label = solr_stats_get_field_label($info, $field_key);
-            $values[] = t('solr_stats', '按!key汇总统计', array('!key' => $label));
+            $values[] = t('solr_stats', '按 !key 汇总统计', array('!key' => $label));
             $values[] = array($label, t('solr_stats', 'Value'));
             foreach ($d as $_k => $_v) {
               if ($_k != 'facets') {
                 $values[] = array(solr_stats_get_stats_label($_k), $_v);
+              } else if (!empty($_v)) {
+                foreach ($_v as $_k2 => $_v2) {
+                  $_label = solr_stats_get_field_label($info, $_k2);
+                  $values[] = '';
+                  $values[] = t('solr_stats', '按 !k !key 汇总统计', array(
+                    '!key' => $label,
+                    '!k' => $_label 
+                  ));
+                  foreach ($_v2 as $_k3 => $_v3) {
+                    $values[] = array($_label . ':' . $_k3, t('solr_stats', 'Value'));
+                    foreach ($_v3 as $_k4 => $_v4) {
+                      if ($_k4 != 'facets') {
+                        $values[] = array(solr_stats_get_stats_label($_k4), $_v4);
+                      }
+                    }
+                    $values[] = '';
+                  }
+                }
               }
             }
             $values[] = '';
