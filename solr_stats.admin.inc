@@ -89,7 +89,11 @@ function solr_stats_admin_stats_ajax($group_type) {
     if (!empty($v['query'])) {
       foreach ($v['query'] as $key => $value) {
         if (!empty($value)) {
-          $args[] = $key . ':' . $value;
+          if (!is_array($value)) {
+            $args[] = $key . ':' . $value;
+          } else {
+            $args[] = $key . ':(' . implode(' OR ', $value) . ')';
+          }
         }
       }
 
@@ -180,11 +184,15 @@ function solr_stats_admin_stats_ajax($group_type) {
       switch ($key) {
         case 'stats_fields':
           foreach ($r as $field_key => $d) {
+            $d = (array) $d;
+            if (empty($d)) continue;
             $label = solr_stats_get_field_label($info, $field_key);
             $values[] = t('solr_stats', '按!key汇总统计', array('!key' => $label));
             $values[] = array($label, t('solr_stats', 'Value'));
             foreach ($d as $_k => $_v) {
-              $values[] = array(solr_stats_get_stats_label($_k), $_v);
+              if ($_k != 'facets') {
+                $values[] = array(solr_stats_get_stats_label($_k), $_v);
+              }
             }
             $values[] = '';
           }
