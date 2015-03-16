@@ -139,15 +139,7 @@ function solr_stats_query_form($group) {
 
   $form['fields']['button'] = array(
     '#type' => 'submit',
-    '#prefix' => '<div id="solr_stats_query_form_button" class="form_item form_item_submit">',
     '#weight' => 9999,
-  );
-
-  $form['fields']['export'] = array(
-    '#type' => 'submit',
-    '#value' => t('solr_stats', '导出数据'),
-    '#suffix' => '</div>',
-    '#weight' => 10000,
   );
 
   $form['fields']['body_wrapper'] = array(
