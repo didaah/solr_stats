@@ -184,7 +184,7 @@ function solr_stats_admin_stats_ajax($group_type) {
             $values[] = t('solr_stats', '按!key汇总统计', array('!key' => $label));
             $values[] = array($label, t('solr_stats', 'Value'));
             foreach ($d as $_k => $_v) {
-              $values[] = array($_k, $_v);
+              $values[] = array(solr_stats_get_stats_label($_k), $_v);
             }
             $values[] = '';
           }

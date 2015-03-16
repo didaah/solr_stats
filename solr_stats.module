@@ -176,6 +176,21 @@ function solr_stats_get_field_label($group, $field_key) {
 }
 // }}}
 
+function solr_stats_get_stats_label($field_key) {
+  $label = array(
+    'min' => t('solr_stats', '最小值'),
+    'max' => t('solr_stats', '最大值'),
+    'count' => t('solr_stats', '匹配记录'),
+    'missing' => t('solr_stats', '未匹配记录'),
+    'sum' => t('solr_stats', '求和'),
+    'sumOfSquares' => t('solr_stats', '平方和'),
+    'mean' => t('solr_stats', '平均值'),
+    'stddev' => t('solr_stats', '标准偏差'),
+  );
+
+  return (!empty($label[$field_key]) ? $label[$field_key] : '') . '(' . $field_key . ')';
+}
+
 // public solr_stats_export_csv(array $data) {{{ 
 /**
  * solr_stats_export_csv
