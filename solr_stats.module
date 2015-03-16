@@ -157,13 +157,20 @@ function solr_stats_query_form($group) {
 /**
  * solr_stats_get_field_label
  * 
- * @param mixed $group 
- * @param mixed $field_key 
+ * @param array $group 
+ * @param string $field_key 
  * @access public
  * @return void
  */
 function solr_stats_get_field_label($group, $field_key) {
   $fields = array();
+
+  if (!empty($group['fields'])) {
+    foreach ($group['fields'] as $key => $info) {
+      $fields[$key] = $info['name'];
+    }
+  }
+
   module_alter_all('solr_stats_get_fields_label', $group, $fields, $field_key);
   return $fields[$field_key];
 }
