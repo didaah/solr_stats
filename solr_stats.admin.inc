@@ -89,6 +89,14 @@ function solr_stats_admin_stats_ajax($group_type) {
     if (!empty($v['query'])) {
       foreach ($v['query'] as $key => $value) {
         if (!empty($value)) {
+          if ($key == '_params') {
+            if (is_array($value)) {
+              foreach ($value as $_v) {
+                $args[] = $_v;
+              }
+            }
+            continue;
+          }
           if (!is_array($value)) {
             $args[] = $key . ':' . $value;
           } else {
