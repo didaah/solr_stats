@@ -44,6 +44,15 @@ function solr_stats_admin_stats($group_type) {
     dd_get_not();
   }
 
+  $tabs = array();
+  foreach (solr_stats_get_group() as $key => $i) {
+    if (user_access('solr stats admin ' . $key . ' view')) {
+      $tabs[] = l($i['title'], 'admin/solr/stats/' . $key);
+    }
+  }
+
+  dd_set_tabs($tabs);
+ 
   $info['key'] = $group_type;
   $output = dd_get_form('solr_stats_query_form', $info);
 
