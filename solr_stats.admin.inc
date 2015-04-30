@@ -97,6 +97,9 @@ function solr_stats_admin_stats_ajax($group_type) {
 
     if (!empty($v['query'])) {
       foreach ($v['query'] as $key => $value) {
+        // 自处理参数，不再解析
+        if (substr($key, 0, 8) == '__custom') continue;
+
         if (!empty($value)) {
           if ($key == '_params') {
             if (is_array($value)) {
@@ -319,7 +322,6 @@ function solr_stats_admin_stats_ajax($group_type) {
         'data' => dd_encrypt($solr->queryString) 
       ),
     ));
-
     $output = '<div class="solr_stats_view_export_link">';
     $output .= '<a href="' . $url . '" target="_blank">';
     $output .= t('solr_stats', '导出数据');
@@ -329,7 +331,8 @@ function solr_stats_admin_stats_ajax($group_type) {
     }
     $output .= '</div>';
     $output .= str_replace('[rows]', $rows_count, theme('table', array(), $table));
-    echo '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '")';
+    echo '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
+    //echo '$("#solr_stats_query_form_type_query_q").val("' . urldecode($solr->queryData['q']) . '");';
   }
 
   exit;
