@@ -175,6 +175,11 @@ function solr_stats_admin_stats_ajax($group_type) {
       }
     }
 
+    if (!empty($query['group.field'])) {
+      $query['group'] = 'on';
+      $query['group.ngroups'] = 'on';
+    }
+
     module_alter_all('solr_stats_query_submit', $info, $query, $v);
     $result = $solr->query($query);
   } else if (!empty($_GET['export'])) {
@@ -290,7 +295,12 @@ function solr_stats_admin_stats_ajax($group_type) {
 
   // group 结果
   if (!empty($result->grouped)) {
-
+    foreach ($result->grouped as $key => $r) {
+      $label = solr_stats_get_field_label($info, $key);
+      $values[] = t('solr_stats', '按!key排重统计', array('!key' => $label));
+      $values[] = array(t('solr_stats', '排重前'), $r->matches);
+      $values[] = array(t('solr_stats', '排重后'), $r->ngroups);
+    }
   }
  
   if (!empty($is_export)) {
