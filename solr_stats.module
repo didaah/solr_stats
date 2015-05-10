@@ -129,6 +129,12 @@ function solr_stats_query_form($group) {
     '#type' => 'textfield',
   );
 
+  $form['fields']['param']['group.field'] = array(
+    '#title' => t('solr_stats', '排重统计'),
+    '#description' => t('solr_stats', '请输入字段名称'),
+    '#type' => 'textfield',
+  );
+
   $form['fields']['param']['default'] = array(
     '#title' => t('solr_stats', '其它参数'),
     '#type' => 'textarea',
