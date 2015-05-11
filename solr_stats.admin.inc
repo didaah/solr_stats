@@ -225,14 +225,20 @@ function solr_stats_admin_stats_ajax($group_type) {
                     '!key' => $label,
                     '!k' => $_label 
                   ));
+                  $c = 0;
                   foreach ($_v2 as $_k3 => $_v3) {
-                    $values[] = array($_label . ':' . $_k3, t('solr_stats', 'Value'));
-                    foreach ($_v3 as $_k4 => $_v4) {
-                      if ($_k4 != 'facets') {
-                        $values[] = array(solr_stats_get_stats_label($_k4), $_v4);
+                    if (!empty($is_export) || $c < 100) {
+                      $values[] = array($_label . ':' . $_k3, t('solr_stats', 'Value'));
+                      foreach ($_v3 as $_k4 => $_v4) {
+                        if ($_k4 != 'facets') {
+                          $values[] = array(solr_stats_get_stats_label($_k4), $_v4);
+                        }
                       }
+                      $values[] = '';
+                    } else {
+                      $is_export_text = true;
                     }
-                    $values[] = '';
+                    $c++;
                   }
                 }
               }
