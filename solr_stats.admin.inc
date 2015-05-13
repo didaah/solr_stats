@@ -236,14 +236,15 @@ function solr_stats_admin_stats_ajax($group_type) {
                         }
                       }
                     } else {
+                      unset($rows[$__k . $_k2 . $_k3]);
                       $is_export_text = true;
                     }
                     $c++;
                   }
+                $rows[] = '';
                 }
               }
             }
-            $rows[] = '';
           }
         break;
       }
