@@ -194,6 +194,10 @@ function solr_stats_get_stats_label($field_key) {
     'stddev' => t('solr_stats', '标准偏差'),
   );
 
+  if ($field_key == '_all') {
+    return $label; 
+  }
+
   return (!empty($label[$field_key]) ? $label[$field_key] : '') . '(' . $field_key . ')';
 }
 

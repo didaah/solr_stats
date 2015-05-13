@@ -194,11 +194,16 @@ function solr_stats_admin_stats_ajax($group_type) {
 
   // 主要结果
   if (!empty($result->response) && !empty($result->response->numFound)) {
-    $values[] = t('solr_stats', '默认统计');
-    $values[] = array(t('solr_stats', '总记录'), $result->response->numFound);
-    $values[] = '';
-    //foreach ($result->response->docs as $doc) {
+    $values[] = t('solr_stats', '匹配总记录(!count)', array(
+      '!count' => $result->response->numFound
+    ));
+    //if ($result->response->docs) {
+    //  $values[] = t('solr_stats', '数据示例，最多显示 10 条：');
+    //  $rows = array();
+    //  foreach ($result->response->docs as $doc) {
+    //  }
     //}
+    $values[] = '';
   }
  
   // stats 结果
@@ -206,35 +211,29 @@ function solr_stats_admin_stats_ajax($group_type) {
     foreach ($result->stats as $key => $r) {
       $r = (array) $r;
       if (empty($r)) continue;
+      $rows = array();
       switch ($key) {
         case 'stats_fields':
           foreach ($r as $field_key => $d) {
             $d = (array) $d;
             if (empty($d)) continue;
             $label = solr_stats_get_field_label($info, $field_key);
-            $values[] = t('solr_stats', '按 !key 汇总统计', array('!key' => $label));
-            $values[] = array($label, t('solr_stats', 'Value'));
+            $rows[0] = array('_all' => $label . '(' . $field_key . ')');
             foreach ($d as $_k => $_v) {
               if ($_k != 'facets') {
-                $values[] = array(solr_stats_get_stats_label($_k), $_v);
+                $rows[0][$_k] = $_v;
               } else if (!empty($_v)) {
                 foreach ($_v as $_k2 => $_v2) {
                   $_label = solr_stats_get_field_label($info, $_k2);
-                  $values[] = '';
-                  $values[] = t('solr_stats', '按 !k !key 汇总统计', array(
-                    '!key' => $label,
-                    '!k' => $_label 
-                  ));
                   $c = 0;
                   foreach ($_v2 as $_k3 => $_v3) {
+                    $rows[$_k2 . $_k3] = array('_all' => $label . '|' . $_label . '|' . $_k3);
                     if (!empty($is_export) || $c < 100) {
-                      $values[] = array($_label . ':' . $_k3, t('solr_stats', 'Value'));
                       foreach ($_v3 as $_k4 => $_v4) {
                         if ($_k4 != 'facets') {
-                          $values[] = array(solr_stats_get_stats_label($_k4), $_v4);
+                          $rows[$_k2 . $_k3][$_k4] = $_v4;
                         }
                       }
-                      $values[] = '';
                     } else {
                       $is_export_text = true;
                     }
@@ -243,9 +242,18 @@ function solr_stats_admin_stats_ajax($group_type) {
                 }
               }
             }
-            $values[] = '';
           }
         break;
+      }
+
+      if (!empty($rows)) {
+        $values[] = '汇总统计';
+        $stats_header = solr_stats_get_stats_label('_all');
+        $values[] = array('_all' => '字段')+$stats_header;
+        foreach ($rows as $r) {
+          $values[] = $r;
+        }
+        $values[] = '';
       }
     }
   }
