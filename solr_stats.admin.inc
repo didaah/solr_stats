@@ -208,30 +208,31 @@ function solr_stats_admin_stats_ajax($group_type) {
  
   // stats 结果
   if (!empty($result->stats)) {
+    $rows = array();
     foreach ($result->stats as $key => $r) {
       $r = (array) $r;
       if (empty($r)) continue;
-      $rows = array();
       switch ($key) {
         case 'stats_fields':
           foreach ($r as $field_key => $d) {
             $d = (array) $d;
             if (empty($d)) continue;
+            $__k = $key . $field_key;
             $label = solr_stats_get_field_label($info, $field_key);
-            $rows[0] = array('_all' => $label . '(' . $field_key . ')');
+            $rows[$__k] = array('_all' => $label . '(' . $field_key . ')');
             foreach ($d as $_k => $_v) {
               if ($_k != 'facets') {
-                $rows[0][$_k] = $_v;
+                $rows[$__k][$_k] = $_v;
               } else if (!empty($_v)) {
                 foreach ($_v as $_k2 => $_v2) {
                   $_label = solr_stats_get_field_label($info, $_k2);
                   $c = 0;
                   foreach ($_v2 as $_k3 => $_v3) {
-                    $rows[$_k2 . $_k3] = array('_all' => $label . '|' . $_label . '|' . $_k3);
+                    $rows[$__k . $_k2 . $_k3] = array('_all' => $label . '|' . $_label . '|' . $_k3);
                     if (!empty($is_export) || $c < 100) {
                       foreach ($_v3 as $_k4 => $_v4) {
                         if ($_k4 != 'facets') {
-                          $rows[$_k2 . $_k3][$_k4] = $_v4;
+                          $rows[$__k . $_k2 . $_k3][$_k4] = $_v4;
                         }
                       }
                     } else {
@@ -242,19 +243,20 @@ function solr_stats_admin_stats_ajax($group_type) {
                 }
               }
             }
+            $rows[] = '';
           }
         break;
       }
+    }
 
-      if (!empty($rows)) {
-        $values[] = '汇总统计';
-        $stats_header = solr_stats_get_stats_label('_all');
-        $values[] = array('_all' => '字段')+$stats_header;
-        foreach ($rows as $r) {
-          $values[] = $r;
-        }
-        $values[] = '';
+    if (!empty($rows)) {
+      $values[] = '汇总统计';
+      $stats_header = solr_stats_get_stats_label('_all');
+      $values[] = array('_all' => '字段')+$stats_header;
+      foreach ($rows as $r) {
+        $values[] = $r;
       }
+      $values[] = '';
     }
   }
 
