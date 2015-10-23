@@ -82,9 +82,9 @@ function solr_stats_admin_stats_ajax($group_type) {
 
   $solr = new solr($group_type);
 
-    $v = $_POST;
+  $v = $_POST;
   $output = _solr_stats_admin_query($v, $solr);
-  return '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
+  echo '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
 
   exit;
 }
