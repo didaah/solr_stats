@@ -368,7 +368,7 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
             $values[] = array($label, t('solr_stats', 'Value'));
             $c = 0;
             foreach ($d as $_k => $_v) {
-              if (!empty($is_export) || $c < 10) {
+              if (!empty($is_export) || $c < 100) {
                 $values[] = array($_k, $_v);
               } else {
                 $is_export_text = true;
