@@ -160,14 +160,17 @@ function solr_stats_admin_stats_ajax($group_type) {
         'data' => dd_encrypt($solr->queryString) 
       ),
     ));
-    $output = '<div class="solr_stats_view_export_link">';
-    $output .= '<a href="' . $url . '" target="_blank">';
-    $output .= t('solr_stats', '导出数据');
-    $output .= '</a>';
-    if (!empty($solr->is_export_text) || !empty($v['batch'])) {
-      $output .= t('solr_stats', '(匹配的数据过多，若需查看全部，请导出)');
+
+    if (count($values) > 20) {
+      $output = '<div class="solr_stats_view_export_link">';
+      $output .= '<a href="' . $url . '" target="_blank">';
+      $output .= t('solr_stats', '导出数据');
+      $output .= '</a>';
+      if (!empty($solr->is_export_text) || !empty($v['batch'])) {
+        $output .= t('solr_stats', '(匹配的数据过多，若需查看全部，请导出)');
+      }
+      $output .= '</div>';
     }
-    $output .= '</div>';
     $output .= str_replace('[rows]', $rows_count, theme('table', array(), $table));
     echo '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
   } else if (!empty($_GET['export'])) {
