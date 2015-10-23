@@ -301,30 +301,30 @@ function _solr_stats_admin_query($v, $solr) {
           $values[] = '';
         break;
         case 'facet_pivot':
-          foreach ($r as $field_key => $d) {
-            if (empty($d->pivot)) continue;
-            if (strpos($field_key, ',') !== false) {
-              $label = '';
-              foreach (explode(',', $field_key) as $__k) {
-                $label .= solr_stats_get_field_label($info, $__k) . ' ';
-              }
-            } else {
-              $label = solr_stats_get_field_label($info, $field_key);
-            }
-            $values[] = t('solr_stats', '按!key维度统计', array('!key' => $label));
-            $values[] = array($d->type . '：' . $d->value, $d->count);
-            $c = 0;
-            foreach ($d->pivot as $_k => $_v) {
-              if (!empty($is_export) || $c < 100) {
-                $values[] = array($_v->value, $_v->count);
-              } else {
-                $is_export_text = true;
-              }
-              $c++;
-            }
-            $values[] = array(t('solr_stats', '!key总数', array('!key' => $label)), $c);
-            $values[] = '';
-          }
+//          foreach ($r as $field_key => $d) {
+//            if (empty($d->pivot)) continue;
+//            if (strpos($field_key, ',') !== false) {
+//              $label = '';
+//              foreach (explode(',', $field_key) as $__k) {
+//                $label .= solr_stats_get_field_label($info, $__k) . ' ';
+//              }
+//            } else {
+//              $label = solr_stats_get_field_label($info, $field_key);
+//            }
+//            $values[] = t('solr_stats', '按!key维度统计', array('!key' => $label));
+//            $values[] = array($d->type . '：' . $d->value, $d->count);
+//            $c = 0;
+//            foreach ($d->pivot as $_k => $_v) {
+//              if (!empty($is_export) || $c < 100) {
+//                $values[] = array($_v->value, $_v->count);
+//              } else {
+//                $is_export_text = true;
+//              }
+//              $c++;
+//            }
+//            $values[] = array(t('solr_stats', '!key总数', array('!key' => $label)), $c);
+//            $values[] = '';
+//          }
         break;
       }
     }
