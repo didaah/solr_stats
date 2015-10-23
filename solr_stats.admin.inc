@@ -92,9 +92,7 @@ function solr_stats_admin_stats_ajax($group_type) {
 
 function _solr_stats_admin_query($v, $solr) {
   $is_export = false;
-  if (!empty($_POST)) {
-    $v = $_POST;
-
+  if (!empty($v)) {
   $query = array();
 
   $args = array();
