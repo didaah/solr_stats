@@ -65,6 +65,19 @@ function solr_stats_admin_stats($group_type) {
 }
 // }}}
 
+function solr_stats_admin_stats_ajax_text_filter($value, &$query = array()) {
+  foreach ($value as $text) {
+    if (strpos($text, '=') !== false) {
+      $_a = explode('=', $text, 2);
+      if (strpos($_a[0], '[]') !== false) {
+        $query[rtrim($_a[0], '[]')][] = $_a[1];
+      } else {
+        $query[$_a[0]] = $_a[1];
+      }
+    }
+  }
+}
+
 // public solr_stats_admin_stats_ajax($group_type) {{{ 
 /**
  * solr_stats_admin_stats_ajax
@@ -75,17 +88,109 @@ function solr_stats_admin_stats($group_type) {
  * @return void
  */
 function solr_stats_admin_stats_ajax($group_type) {
+  $solr = new solr($group_type);
+  $output = '';
+  if (!empty($_POST)) {
+    $v = $_POST;
+    $values = array();
+
+    if (!empty($v['batch']) && $batch = dd_line_to_array($v['batch'], 1)) {
+      if (!empty($v['query']['q'])) {
+        $old_query = ' AND ' . $v['query']['q'];
+      } else {
+        $old_query = '';
+      }
+      $last_key = '';
+      foreach ($batch as $_v) {
+        $v['query']['q'] = $_v . $old_query;
+        $last_key = $_v;
+        $rows = _solr_stats_admin_stats_ajax($group_type, $solr, $v);
+        $values[] = t('solr_stats', '查询条件：!query', array(
+          '!query' => urldecode($solr->queryData['q'])
+        ));
+        $values[] = t('solr_stats', '完整参数：!query', array(
+          '!query' => urldecode($solr->queryString)
+        ));
+        $values = array_merge($values, $rows);
+        $values[] = '';
+      }
+      $solr->queryString .= '&batch=' . urlencode($v['batch']);
+      $solr->queryString = str_replace('q=' . urlencode($last_key), '---batch---', $solr->queryString);
+      //$values[] = $solr->queryString;
+    } else {
+      $values = _solr_stats_admin_stats_ajax($group_type, $solr, $v);
+      array_unshift($values, t('solr_stats', '完整参数：!query', array(
+        '!query' => urldecode($solr->queryString)
+      )));
+      array_unshift($values, t('solr_stats', '查询条件：!query', array(
+        '!query' => urldecode($solr->queryData['q'])
+      )));
+    }
+ 
+    $rows_count = 1;
+    foreach ($values as $data) {
+      if (is_array($data)) {
+        $c = count($data);
+        if ($c > $rows_count) $rows_count = $c;
+        $table[] = $data;
+      } else {
+        $rows = array('data' => $data, 'colspan' => '[rows]');
+        if (empty($data)) {
+          $rows['class'] = 'solr_stats_view_rows_line';
+        } else {
+          $rows['class'] = 'solr_stats_view_rows_title';
+        }
+        $table[][] = $rows;
+      }
+    }
+    
+    $url = url('admin/solr/stats/' . $group_type . '/ajax', array(
+      'query' => array(
+        'export' => 1,
+        'data' => dd_encrypt($solr->queryString) 
+      ),
+    ));
+    $output = '<div class="solr_stats_view_export_link">';
+    $output .= '<a href="' . $url . '" target="_blank">';
+    $output .= t('solr_stats', '导出数据');
+    $output .= '</a>';
+    if (!empty($is_export_text)) {
+      $output .= t('solr_stats', '(匹配的数据过多，若需查看全部，请导出)');
+    }
+    $output .= '</div>';
+    $output .= str_replace('[rows]', $rows_count, theme('table', array(), $table));
+    echo '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
+  } else if (!empty($_GET['export'])) {
+    $v = dd_decrypt($_GET['data']);
+    $query = array();
+    parse_str(urldecode($v), $query);
+    if (!empty($query['batch']) && $batch = dd_line_to_array(urldecode($query['batch']), 1)) {
+      $values = array();
+      foreach ($batch as $key) {
+        if ($rows = _solr_stats_admin_stats_ajax($group_type, $solr,str_replace('---batch---', 'q=' . urlencode($key), $v) , 1)) {
+          $values[] = t('solr_stats', '查询条件：!query', array(
+            '!query' => urldecode($solr->queryData['q'])
+          ));
+          $values = array_merge($values, $rows);
+          $values[] = '';
+        }
+      }
+      solr_stats_export_csv(array('title' => $group_type, 'rows' => $values));
+    } else if ($values = _solr_stats_admin_stats_ajax($group_type, $solr, $v, 1)) {
+      solr_stats_export_csv(array('title' => $group_type, 'rows' => $values));
+    }
+  }
+
+  exit;
+}
+
+function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false) {
   if (!$info = solr_get_search_group($group_type)) {
     echo '';
     exit;
   }
-
-  $solr = new solr($group_type);
-
-  if (!empty($_POST)) {
-    $v = $_POST;
-    $is_export = false;
-   
+ 
+  if (empty($is_export)) {
     $query = array();
 
     $args = array();
@@ -129,16 +234,7 @@ function solr_stats_admin_stats_ajax($group_type) {
     }
     
     if (!empty($v['param']['default']) && $value = dd_line_to_array($v['param']['default'], 1)) {
-      foreach ($value as $text) {
-        if (strpos($text, '=') !== false) {
-          $_a = explode('=', $text, 2);
-          if (strpos($_a[0], '[]') !== false) {
-            $query[rtrim($_a[0], '[]')][] = $_a[1];
-          } else {
-            $query[$_a[0]] = $_a[1];
-          }
-        }
-      }
+      solr_stats_admin_stats_ajax_text_filter($v['param']['default'], $query);
       unset($v['param']['default']);
     }
 
@@ -182,10 +278,8 @@ function solr_stats_admin_stats_ajax($group_type) {
 
     module_alter_all('solr_stats_query_submit', $info, $query, $v);
     $result = $solr->query($query);
-  } else if (!empty($_GET['export'])) {
-    $query = dd_decrypt($_GET['data']);
-    $result = $solr->query($query, 'GET', false);
-    $is_export = true;
+  } else {
+    $result = $solr->query($v, 'GET', false);
   }
 
   $values = array();
@@ -274,7 +368,7 @@ function solr_stats_admin_stats_ajax($group_type) {
             $values[] = array($label, t('solr_stats', 'Value'));
             $c = 0;
             foreach ($d as $_k => $_v) {
-              if (!empty($is_export) || $c < 100) {
+              if (!empty($is_export) || $c < 10) {
                 $values[] = array($_k, $_v);
               } else {
                 $is_export_text = true;
@@ -293,21 +387,37 @@ function solr_stats_admin_stats_ajax($group_type) {
           }
           $values[] = '';
         break;
+        case 'facet_pivot':
+          foreach ($r as $field_key => $vd) {
+            if (strpos($field_key, ',') !== false) {
+              $label = ' ';
+              foreach (explode(',', $field_key) as $__k) {
+                $label .= solr_stats_get_field_label($info, $__k) . ' ';
+              }
+            } else {
+              $label = solr_stats_get_field_label($info, $field_key);
+            }
+            $values[] = t('solr_stats', '按!key维度统计', array('!key' => $label));
+            foreach ($vd as $d) {
+              if (empty($d->pivot)) continue;
+              $values[] = array(solr_stats_get_field_label($info, $d->field) . '：' . $d->value, $d->count);
+              $c = 0;
+              foreach ($d->pivot as $_k => $_v) {
+                if (!empty($is_export) || $c < 10) {
+                  $values[] = array($_v->value, $_v->count);
+                } else {
+                  $is_export_text = true;
+                }
+                $c++;
+              }
+              $values[] = '';
+              $values[] = array(t('solr_stats', '!key总数', array('!key' => $label)), $c);
+              $values[] = '';
+            }
+          }
+        break;
       }
     }
-    //if (!empty($query['facet.pivot']) && 
-    //$result->facet_counts->facet_pivot->{$query['facet.pivot']}) {
-    //  foreach ($result->facet_counts->facet_pivot->{$query['facet.pivot']} as $_o) {
-    //    $data['facet']['count'] += count($_o->pivot);
-    //  }
-    //} else {
-    //  foreach ($result->facet_counts->facet_fields->{$query['facet.field']} as $_k => $o) {
-    //    $data['facet']['count']++;
-    //    if ($data['facet']['count'] < 2000 && empty($v['export'])) {
-    //      $data['facet']['items'][$_k] = $o;
-    //    }
-    //  }
-    //}
   }
 
   // group 结果
@@ -319,50 +429,9 @@ function solr_stats_admin_stats_ajax($group_type) {
       $values[] = array(t('solr_stats', '排重后'), $r->ngroups);
     }
   }
- 
-  if (!empty($is_export)) {
-    solr_stats_export_csv(array('title' => $group_type, 'rows' => $values));
-    exit;
-  }
 
-  if (!empty($values)) {
-    $rows_count = 1;
-    foreach ($values as $data) {
-      if (is_array($data)) {
-        $c = count($data);
-        if ($c > $rows_count) $rows_count = $c;
-        $table[] = $data;
-      } else {
-        $rows = array('data' => $data, 'colspan' => '[rows]');
-        if (empty($data)) {
-          $rows['class'] = 'solr_stats_view_rows_line';
-        } else {
-          $rows['class'] = 'solr_stats_view_rows_title';
-        }
-        $table[][] = $rows;
-      }
-    }
-    
-    $url = url('admin/solr/stats/' . $group_type . '/ajax', array(
-      'query' => array(
-        'export' => 1,
-        'data' => dd_encrypt($solr->queryString) 
-      ),
-    ));
-    $output = '<div class="solr_stats_view_export_link">';
-    $output .= '<a href="' . $url . '" target="_blank">';
-    $output .= t('solr_stats', '导出数据');
-    $output .= '</a>';
-    if (!empty($is_export_text)) {
-      $output .= t('solr_stats', '(匹配的数据过多，若需查看全部，请导出)');
-    }
-    $output .= '</div>';
-    $output .= str_replace('[rows]', $rows_count, theme('table', array(), $table));
-    echo '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
+  return $values;
     //echo '$("#solr_stats_query_form_type_query_q").val("' . urldecode($solr->queryData['q']) . '");';
-  }
-
-  exit;
 }
 // }}}
 

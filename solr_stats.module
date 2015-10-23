@@ -115,6 +115,7 @@ function solr_stats_query_form($group) {
   $form['fields']['query']['q'] = array(
     '#title' => t('solr_stats', '查询语句'),
     '#type' => 'textarea',
+    '#attributes' => array('rows' => 5),
   );
 
   $form['fields']['param']['stats.field'] = array(
@@ -138,7 +139,16 @@ function solr_stats_query_form($group) {
   $form['fields']['param']['default'] = array(
     '#title' => t('solr_stats', '其它参数'),
     '#type' => 'textarea',
+    '#attributes' => array('rows' => 5),
     '#description' => t('solr_stats', '一行一个参数，参数名与参数值以等号(=)分割，例如：facet=true'),
+  );
+
+  $form['fields']['batch'] = array(
+    '#title' => t('solr_stats', '批量查询'),
+    '#type' => 'textarea',
+    '#weight' => 999,
+    '#attributes' => array('rows' => 5),
+    '#description' => t('solr_stats', '每行一条查询语句，如：city:北京')
   );
 
   module_alter_all('solr_stats_query_form', $group, $form);
