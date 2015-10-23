@@ -82,11 +82,9 @@ function solr_stats_admin_stats_ajax($group_type) {
 
   $solr = new solr($group_type);
 
-  if (!empty($_POST)) {
     $v = $_POST;
-    $output = _solr_stats_admin_query($v, $solr);
-    return '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
-  }
+  $output = _solr_stats_admin_query($v, $solr);
+  return '$("#solr_stats_query_form_body_wrapper").html("' . addslashes(str_replace("\n", '', $output)) . '");';
 
   exit;
 }
@@ -94,7 +92,9 @@ function solr_stats_admin_stats_ajax($group_type) {
 
 function _solr_stats_admin_query($v, $solr) {
   $is_export = false;
- 
+  if (!empty($_POST)) {
+    $v = $_POST;
+
   $query = array();
 
   $args = array();
@@ -191,208 +191,209 @@ function _solr_stats_admin_query($v, $solr) {
 
   module_alter_all('solr_stats_query_submit', $info, $query, $v);
   $result = $solr->query($query);
-} else if (!empty($_GET['export'])) {
-  $query = dd_decrypt($_GET['data']);
-  $result = $solr->query($query, 'GET', false);
-  $is_export = true;
-}
+ } else if (!empty($_GET['export'])) {
+    $query = dd_decrypt($_GET['data']);
+    $result = $solr->query($query, 'GET', false);
+    $is_export = true;
+ }
 
-$values = array();
+  $values = array();
 
-$is_export_text = false;
+  $is_export_text = false;
 
-// 主要结果
-if (!empty($result->response) && !empty($result->response->numFound)) {
-  $values[] = t('solr_stats', '匹配总记录(!count)', array(
-    '!count' => $result->response->numFound
-  ));
-  //if ($result->response->docs) {
-  //  $values[] = t('solr_stats', '数据示例，最多显示 10 条：');
-  //  $rows = array();
-  //  foreach ($result->response->docs as $doc) {
-  //  }
-  //}
-  $values[] = '';
-}
+  // 主要结果
+  if (!empty($result->response) && !empty($result->response->numFound)) {
+    $values[] = t('solr_stats', '匹配总记录(!count)', array(
+      '!count' => $result->response->numFound
+    ));
+    //if ($result->response->docs) {
+    //  $values[] = t('solr_stats', '数据示例，最多显示 10 条：');
+    //  $rows = array();
+    //  foreach ($result->response->docs as $doc) {
+    //  }
+    //}
+    $values[] = '';
+  }
 
-// stats 结果
-if (!empty($result->stats)) {
-  $rows = array();
-  foreach ($result->stats as $key => $r) {
-    $r = (array) $r;
-    if (empty($r)) continue;
-    switch ($key) {
-      case 'stats_fields':
-        foreach ($r as $field_key => $d) {
-          $d = (array) $d;
-          if (empty($d)) continue;
-          $__k = $key . $field_key;
-          $label = solr_stats_get_field_label($info, $field_key);
-          $rows[$__k] = array('_all' => $label . '(' . $field_key . ')');
-          foreach ($d as $_k => $_v) {
-            if ($_k != 'facets') {
-              $rows[$__k][$_k] = $_v;
-            } else if (!empty($_v)) {
-              foreach ($_v as $_k2 => $_v2) {
-                $_label = solr_stats_get_field_label($info, $_k2);
-                $c = 0;
-                foreach ($_v2 as $_k3 => $_v3) {
-                  $rows[$__k . $_k2 . $_k3] = array('_all' => $label . '|' . $_label . '|' . $_k3);
-                  if (!empty($is_export) || $c < 100) {
-                    foreach ($_v3 as $_k4 => $_v4) {
-                      if ($_k4 != 'facets') {
-                        $rows[$__k . $_k2 . $_k3][$_k4] = $_v4;
+  // stats 结果
+  if (!empty($result->stats)) {
+    $rows = array();
+    foreach ($result->stats as $key => $r) {
+      $r = (array) $r;
+      if (empty($r)) continue;
+      switch ($key) {
+        case 'stats_fields':
+          foreach ($r as $field_key => $d) {
+            $d = (array) $d;
+            if (empty($d)) continue;
+            $__k = $key . $field_key;
+            $label = solr_stats_get_field_label($info, $field_key);
+            $rows[$__k] = array('_all' => $label . '(' . $field_key . ')');
+            foreach ($d as $_k => $_v) {
+              if ($_k != 'facets') {
+                $rows[$__k][$_k] = $_v;
+              } else if (!empty($_v)) {
+                foreach ($_v as $_k2 => $_v2) {
+                  $_label = solr_stats_get_field_label($info, $_k2);
+                  $c = 0;
+                  foreach ($_v2 as $_k3 => $_v3) {
+                    $rows[$__k . $_k2 . $_k3] = array('_all' => $label . '|' . $_label . '|' . $_k3);
+                    if (!empty($is_export) || $c < 100) {
+                      foreach ($_v3 as $_k4 => $_v4) {
+                        if ($_k4 != 'facets') {
+                          $rows[$__k . $_k2 . $_k3][$_k4] = $_v4;
+                        }
                       }
+                    } else {
+                      unset($rows[$__k . $_k2 . $_k3]);
+                      $is_export_text = true;
                     }
-                  } else {
-                    unset($rows[$__k . $_k2 . $_k3]);
-                    $is_export_text = true;
+                    $c++;
                   }
-                  $c++;
+                $rows[] = '';
                 }
-              $rows[] = '';
               }
             }
           }
-        }
-      break;
-    }
-  }
-
-  if (!empty($rows)) {
-    $values[] = '汇总统计';
-    $stats_header = solr_stats_get_stats_label('_all');
-    $values[] = array('_all' => '字段')+$stats_header;
-    foreach ($rows as $r) {
-      $values[] = $r;
-    }
-    $values[] = '';
-  }
-}
-
-// facet 结果
-if (!empty($result->facet_counts)) {
-  foreach ($result->facet_counts as $key => $r) {
-    $r = (array) $r;
-    if (empty($r)) continue;
-    switch ($key) {
-      case 'facet_fields':
-        foreach ($r as $field_key => $d) {
-          $label = solr_stats_get_field_label($info, $field_key);
-          $values[] = t('solr_stats', '按!key维度统计', array('!key' => $label));
-          $values[] = array($label, t('solr_stats', 'Value'));
-          $c = 0;
-          foreach ($d as $_k => $_v) {
-            if (!empty($is_export) || $c < 100) {
-              $values[] = array($_k, $_v);
-            } else {
-              $is_export_text = true;
-            }
-            $c++;
-          }
-          $values[] = array(t('solr_stats', '!key总数', array('!key' => $label)), $c);
-          $values[] = '';
-        }
-      break;
-      case 'facet_queries':
-        $values[] = t('solr_stats', '按查询维度统计');
-        $values[] = array(t('solr_stats', '查询参数'), t('solr_stats', '匹配记录'));
-        foreach ($r as $_k => $_v) {
-          $values[] = array($_k, $_v);
-        }
-        $values[] = '';
-      break;
-      case 'facet_pivot':
-        foreach ($r as $field_key => $d) {
-          if (empty($d->pivot)) continue;
-          if (strpos($field_key, ',') !== false) {
-            $label = '';
-            foreach (explode(',', $field_key) as $__k) {
-              $label .= solr_stats_get_field_label($info, $__k) . ' ';
-            }
-          } else {
-            $label = solr_stats_get_field_label($info, $field_key);
-          }
-          $values[] = t('solr_stats', '按!key维度统计', array('!key' => $label));
-          $values[] = array($d->type . '：' . $d->value, $d->count);
-          $c = 0;
-          foreach ($d->pivot as $_k => $_v) {
-            if (!empty($is_export) || $c < 100) {
-              $values[] = array($_v->value, $_v->count);
-            } else {
-              $is_export_text = true;
-            }
-            $c++;
-          }
-          $values[] = array(t('solr_stats', '!key总数', array('!key' => $label)), $c);
-          $values[] = '';
-        }
-      break;
-    }
-  }
-  //if (!empty($query['facet.pivot']) && 
-  //$result->facet_counts->facet_pivot->{$query['facet.pivot']}) {
-  //  foreach ($result->facet_counts->facet_pivot->{$query['facet.pivot']} as $_o) {
-  //    $data['facet']['count'] += count($_o->pivot);
-  //  }
-  //} else {
-  //  foreach ($result->facet_counts->facet_fields->{$query['facet.field']} as $_k => $o) {
-  //    $data['facet']['count']++;
-  //    if ($data['facet']['count'] < 2000 && empty($v['export'])) {
-  //      $data['facet']['items'][$_k] = $o;
-  //    }
-  //  }
-  //}
-}
-
-// group 结果
-if (!empty($result->grouped)) {
-  foreach ($result->grouped as $key => $r) {
-    $label = solr_stats_get_field_label($info, $key);
-    $values[] = t('solr_stats', '按!key排重统计', array('!key' => $label));
-    $values[] = array(t('solr_stats', '排重前'), $r->matches);
-    $values[] = array(t('solr_stats', '排重后'), $r->ngroups);
-  }
-}
-
-if (!empty($is_export)) {
-  solr_stats_export_csv(array('title' => $group_type, 'rows' => $values));
-  exit;
-}
-
-if (!empty($values)) {
-  $rows_count = 1;
-  foreach ($values as $data) {
-    if (is_array($data)) {
-      $c = count($data);
-      if ($c > $rows_count) $rows_count = $c;
-      $table[] = $data;
-    } else {
-      $rows = array('data' => $data, 'colspan' => '[rows]');
-      if (empty($data)) {
-        $rows['class'] = 'solr_stats_view_rows_line';
-      } else {
-        $rows['class'] = 'solr_stats_view_rows_title';
+        break;
       }
-      $table[][] = $rows;
+    }
+
+    if (!empty($rows)) {
+      $values[] = '汇总统计';
+      $stats_header = solr_stats_get_stats_label('_all');
+      $values[] = array('_all' => '字段')+$stats_header;
+      foreach ($rows as $r) {
+        $values[] = $r;
+      }
+      $values[] = '';
     }
   }
-  
-  $url = url('admin/solr/stats/' . $group_type . '/ajax', array(
-    'query' => array(
-      'export' => 1,
-      'data' => dd_encrypt($solr->queryString) 
-    ),
-  ));
-  $output = '<div class="solr_stats_view_export_link">';
-  $output .= '<a href="' . $url . '" target="_blank">';
-  $output .= t('solr_stats', '导出数据');
-  $output .= '</a>';
-  if (!empty($is_export_text)) {
-    $output .= t('solr_stats', '(匹配的数据过多，若需查看全部，请导出)');
+
+  // facet 结果
+  if (!empty($result->facet_counts)) {
+    foreach ($result->facet_counts as $key => $r) {
+      $r = (array) $r;
+      if (empty($r)) continue;
+      switch ($key) {
+        case 'facet_fields':
+          foreach ($r as $field_key => $d) {
+            $label = solr_stats_get_field_label($info, $field_key);
+            $values[] = t('solr_stats', '按!key维度统计', array('!key' => $label));
+            $values[] = array($label, t('solr_stats', 'Value'));
+            $c = 0;
+            foreach ($d as $_k => $_v) {
+              if (!empty($is_export) || $c < 100) {
+                $values[] = array($_k, $_v);
+              } else {
+                $is_export_text = true;
+              }
+              $c++;
+            }
+            $values[] = array(t('solr_stats', '!key总数', array('!key' => $label)), $c);
+            $values[] = '';
+          }
+        break;
+        case 'facet_queries':
+          $values[] = t('solr_stats', '按查询维度统计');
+          $values[] = array(t('solr_stats', '查询参数'), t('solr_stats', '匹配记录'));
+          foreach ($r as $_k => $_v) {
+            $values[] = array($_k, $_v);
+          }
+          $values[] = '';
+        break;
+        case 'facet_pivot':
+          foreach ($r as $field_key => $d) {
+            if (empty($d->pivot)) continue;
+            if (strpos($field_key, ',') !== false) {
+              $label = '';
+              foreach (explode(',', $field_key) as $__k) {
+                $label .= solr_stats_get_field_label($info, $__k) . ' ';
+              }
+            } else {
+              $label = solr_stats_get_field_label($info, $field_key);
+            }
+            $values[] = t('solr_stats', '按!key维度统计', array('!key' => $label));
+            $values[] = array($d->type . '：' . $d->value, $d->count);
+            $c = 0;
+            foreach ($d->pivot as $_k => $_v) {
+              if (!empty($is_export) || $c < 100) {
+                $values[] = array($_v->value, $_v->count);
+              } else {
+                $is_export_text = true;
+              }
+              $c++;
+            }
+            $values[] = array(t('solr_stats', '!key总数', array('!key' => $label)), $c);
+            $values[] = '';
+          }
+        break;
+      }
+    }
+    //if (!empty($query['facet.pivot']) && 
+    //$result->facet_counts->facet_pivot->{$query['facet.pivot']}) {
+    //  foreach ($result->facet_counts->facet_pivot->{$query['facet.pivot']} as $_o) {
+    //    $data['facet']['count'] += count($_o->pivot);
+    //  }
+    //} else {
+    //  foreach ($result->facet_counts->facet_fields->{$query['facet.field']} as $_k => $o) {
+    //    $data['facet']['count']++;
+    //    if ($data['facet']['count'] < 2000 && empty($v['export'])) {
+    //      $data['facet']['items'][$_k] = $o;
+    //    }
+    //  }
+    //}
   }
-  $output .= '</div>';
-  $output .= str_replace('[rows]', $rows_count, theme('table', array(), $table));
-  return $output;
-  //echo '$("#solr_stats_query_form_type_query_q").val("' . urldecode($solr->queryData['q']) . '");';
+
+  // group 结果
+  if (!empty($result->grouped)) {
+    foreach ($result->grouped as $key => $r) {
+      $label = solr_stats_get_field_label($info, $key);
+      $values[] = t('solr_stats', '按!key排重统计', array('!key' => $label));
+      $values[] = array(t('solr_stats', '排重前'), $r->matches);
+      $values[] = array(t('solr_stats', '排重后'), $r->ngroups);
+    }
+  }
+
+  if (!empty($is_export)) {
+    solr_stats_export_csv(array('title' => $group_type, 'rows' => $values));
+    exit;
+  }
+
+  if (!empty($values)) {
+    $rows_count = 1;
+    foreach ($values as $data) {
+      if (is_array($data)) {
+        $c = count($data);
+        if ($c > $rows_count) $rows_count = $c;
+        $table[] = $data;
+      } else {
+        $rows = array('data' => $data, 'colspan' => '[rows]');
+        if (empty($data)) {
+          $rows['class'] = 'solr_stats_view_rows_line';
+        } else {
+          $rows['class'] = 'solr_stats_view_rows_title';
+        }
+        $table[][] = $rows;
+      }
+    }
+    
+    $url = url('admin/solr/stats/' . $group_type . '/ajax', array(
+      'query' => array(
+        'export' => 1,
+        'data' => dd_encrypt($solr->queryString) 
+      ),
+    ));
+    $output = '<div class="solr_stats_view_export_link">';
+    $output .= '<a href="' . $url . '" target="_blank">';
+    $output .= t('solr_stats', '导出数据');
+    $output .= '</a>';
+    if (!empty($is_export_text)) {
+      $output .= t('solr_stats', '(匹配的数据过多，若需查看全部，请导出)');
+    }
+    $output .= '</div>';
+    $output .= str_replace('[rows]', $rows_count, theme('table', array(), $table));
+    return $output;
+    //echo '$("#solr_stats_query_form_type_query_q").val("' . urldecode($solr->queryData['q']) . '");';
+  }
 }
