@@ -127,8 +127,17 @@ function solr_stats_admin_stats_ajax($group_type) {
       )));
     }
  
+    $i = 0;
     $rows_count = 1;
     foreach ($values as $data) {
+      // 最多只显示 500 行，以免页面过大
+      if ($i > 500) {
+        $table[][] = array(
+          'data' => t('solr_stats', '匹配的数据过多，若需查看全部，请导出'),
+          'colspan' => '[rows]'
+        );
+        break;
+      }
       if (is_array($data)) {
         $c = count($data);
         if ($c > $rows_count) $rows_count = $c;
@@ -142,6 +151,7 @@ function solr_stats_admin_stats_ajax($group_type) {
         }
         $table[][] = $rows;
       }
+      $i++;
     }
     
     $url = url('admin/solr/stats/' . $group_type . '/ajax', array(
@@ -154,7 +164,7 @@ function solr_stats_admin_stats_ajax($group_type) {
     $output .= '<a href="' . $url . '" target="_blank">';
     $output .= t('solr_stats', '导出数据');
     $output .= '</a>';
-    if (!empty($is_export_text)) {
+    if (!empty($solr->is_export_text) || !empty($v['batch'])) {
       $output .= t('solr_stats', '(匹配的数据过多，若需查看全部，请导出)');
     }
     $output .= '</div>';
@@ -429,6 +439,8 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
       $values[] = array(t('solr_stats', '排重后'), $r->ngroups);
     }
   }
+
+  $solr->is_export_text = $is_export_text;
 
   return $values;
     //echo '$("#solr_stats_query_form_type_query_q").val("' . urldecode($solr->queryData['q']) . '");';
