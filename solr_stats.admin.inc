@@ -78,6 +78,32 @@ function solr_stats_admin_stats_ajax_text_filter($value, &$query = array()) {
   }
 }
 
+function solr_stats_admin_stats_ajax_batch_filter($value, $solr) {
+  if ($batch = dd_line_to_array($value)) {
+    $query = array(); 
+    foreach ($batch as $v) {
+      if (preg_match('/\-\-\-(.*?)\-\-\-/i', $v, $mat)) {
+        $result = $solr->query(array(
+          'q' => '*:*',
+          'facet' => 'on',
+          'facet.field' => $mat[1],
+          'facet.mincount' => 1,
+          'facet.limit' => 1000
+        ));
+        if (!empty($result->stats) && !empty($result->stats->stats_fields) && !empty($result->stats->stats_fields->{$mat[1]})) {
+          foreach ($result->stats->stats_fields->{$mat[1]} as $key => $r) {
+            $query[] = str_replace('---' . $mat[1] . $key, $v);
+          }
+        }
+      } else {
+        $query[] = $v;
+      }
+    }
+
+    return $query;
+  }
+}
+
 // public solr_stats_admin_stats_ajax($group_type) {{{ 
 /**
  * solr_stats_admin_stats_ajax
@@ -94,7 +120,7 @@ function solr_stats_admin_stats_ajax($group_type) {
     $v = $_POST;
     $values = array();
 
-    if (!empty($v['batch']) && $batch = dd_line_to_array($v['batch'], 1)) {
+    if (!empty($v['batch']) && $batch = solr_stats_admin_stats_ajax_batch_filter($v['batch'], $solr)) {
       if (!empty($v['query']['q'])) {
         $old_query = ' AND ' . $v['query']['q'];
       } else {
@@ -177,7 +203,7 @@ function solr_stats_admin_stats_ajax($group_type) {
     $v = dd_decrypt($_GET['data']);
     $query = array();
     parse_str(urldecode($v), $query);
-    if (!empty($query['batch']) && $batch = dd_line_to_array(urldecode($query['batch']), 1)) {
+    if (!empty($v['batch']) && $batch = solr_stats_admin_stats_ajax_batch_filter(urldecode($query['batch']), $solr)) {
       $values = array();
       foreach ($batch as $key) {
         if ($rows = _solr_stats_admin_stats_ajax($group_type, $solr,str_replace('---batch---', 'q=' . urlencode($key), $v) , 1)) {
