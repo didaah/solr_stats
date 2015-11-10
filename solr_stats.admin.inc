@@ -247,7 +247,7 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
     }
     
     if (!empty($v['param']['default']) && $value = dd_line_to_array($v['param']['default'], 1)) {
-      solr_stats_admin_stats_ajax_text_filter($v['param']['default'], $query);
+      solr_stats_admin_stats_ajax_text_filter($value, $query);
       unset($v['param']['default']);
     }
 
