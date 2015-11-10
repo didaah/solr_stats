@@ -90,9 +90,9 @@ function solr_stats_admin_stats_ajax_batch_filter($value, $solr) {
           'facet.mincount' => 1,
           'facet.limit' => 1000
         ));
-        if (!empty($result->stats) && !empty($result->stats->stats_fields) && !empty($result->stats->stats_fields->{$mat[1]})) {
-          foreach ($result->stats->stats_fields->{$mat[1]} as $key => $r) {
-            $query[] = str_replace('---' . $mat[1] . $key, $v);
+        if (!empty($result->facet_counts) && !empty($result->facet_counts->facet_fields) && !empty($result->facet_counts->facet_fields->{$mat[1]})) {
+          foreach ($result->facet_counts->facet_fields->{$mat[1]} as $key => $r) {
+            $query[] = str_replace('---' . $mat[1] . '---',  $key, $v);
           }
         }
       } else {
@@ -202,7 +202,7 @@ function solr_stats_admin_stats_ajax($group_type) {
     $v = dd_decrypt($_GET['data']);
     $query = array();
     parse_str(urldecode($v), $query);
-    if (!empty($v['batch']) && $batch = solr_stats_admin_stats_ajax_batch_filter(urldecode($query['batch']), $solr)) {
+    if (!empty($query['batch']) && $batch = solr_stats_admin_stats_ajax_batch_filter(urldecode($query['batch']), $solr)) {
       $values = array();
       foreach ($batch as $key) {
         if ($rows = _solr_stats_admin_stats_ajax($group_type, $solr,str_replace('---batch---', 'q=' . urlencode($key), $v) , 1)) {

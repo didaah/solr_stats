@@ -148,7 +148,7 @@ function solr_stats_query_form($group) {
     '#type' => 'textarea',
     '#weight' => 999,
     '#attributes' => array('rows' => 5),
-    '#description' => t('solr_stats', '每行一条查询语句，如：city:北京')
+    '#description' => t('solr_stats', '每行一条查询语句，如：city:北京 或 city:---city---')
   );
 
   module_alter_all('solr_stats_query_form', $group, $form);
