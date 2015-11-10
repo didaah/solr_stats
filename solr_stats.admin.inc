@@ -99,7 +99,6 @@ function solr_stats_admin_stats_ajax_batch_filter($value, $solr) {
         $query[] = $v;
       }
     }
-
     return $query;
   }
 }
