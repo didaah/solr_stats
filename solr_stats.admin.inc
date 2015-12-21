@@ -469,7 +469,7 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
       $doc = $result->response->docs[0];
       $header = array();
       foreach ($doc as $key => $i) {
-        $header[$key] = solr_stats_get_field_label($info, $key);
+        $header[$key] = solr_stats_get_field_label($info, $key) . '(' . $key . ')';
       }
       $values[] = $header;
       foreach ($result->response->docs as $doc) {
