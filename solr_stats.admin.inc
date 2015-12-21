@@ -329,15 +329,9 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
     $values[] = t('solr_stats', '匹配总记录(!count)', array(
       '!count' => $result->response->numFound
     ));
-    //if ($result->response->docs) {
-    //  $values[] = t('solr_stats', '数据示例，最多显示 10 条：');
-    //  $rows = array();
-    //  foreach ($result->response->docs as $doc) {
-    //  }
-    //}
     $values[] = '';
   }
- 
+
   // stats 结果
   if (!empty($result->stats)) {
     $rows = array();
@@ -468,6 +462,30 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
     }
   }
 
+  // 主要结果
+  if (!empty($result->response) && !empty($result->response->numFound)) {
+    if (!empty($result->response->docs)) {
+      $values[] = t('solr_stats', '明细示例：');
+      $doc = $result->response->docs[0];
+      $header = array();
+      foreach ($doc as $key => $i) {
+        $header[$key] = solr_stats_get_field_label($info, $key);
+      }
+      foreach ($result->response->docs as $doc) {
+        $rows = array();
+        foreach ($header as $key => $i) {
+          if (!empty($doc->{$key})) {
+            $rows[] = $doc->{$key};
+          } else {
+            $rows[] = '';
+          }
+        }
+        $values[] = $rows;
+      }
+    }
+    $values[] = '';
+  }
+ 
   $solr->is_export_text = $is_export_text;
 
   return $values;
