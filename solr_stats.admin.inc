@@ -476,7 +476,7 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
         $rows = array();
         foreach ($header as $key => $i) {
           if (!empty($doc->{$key})) {
-            $rows[] = $doc->{$key};
+            $rows[] = is_array($doc->{$key}) ? implode(',', $doc->{$key}) : $doc->{$key};
           } else {
             $rows[] = '';
           }
