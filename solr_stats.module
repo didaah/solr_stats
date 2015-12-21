@@ -187,6 +187,8 @@ function solr_stats_get_field_label($group, $field_key) {
     }
   }
 
+  $fields['_version_'] = t('solr_stats', '内部版本');
+
   module_alter_all('solr_stats_get_fields_label', $group, $fields, $field_key);
   return $fields[$field_key];
 }
