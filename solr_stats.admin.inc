@@ -472,7 +472,11 @@ function _solr_stats_admin_stats_ajax($group_type, $solr, $v, $is_export = false
         $header[$key] = solr_stats_get_field_label($info, $key) . '(' . $key . ')';
       }
       $values[] = $header;
-      foreach ($result->response->docs as $doc) {
+      foreach ($result->response->docs as $j => $doc) {
+        if (empty($is_export) && $j > 20) {
+          $is_export_text = true;
+          break;
+        }
         $rows = array();
         foreach ($header as $key => $i) {
           if (!empty($doc->{$key})) {

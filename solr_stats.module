@@ -118,6 +118,14 @@ function solr_stats_query_form($group) {
     '#attributes' => array('rows' => 5),
   );
 
+  $form['fields']['param']['rows'] = array(
+    '#title' => t('solr_stats', '明细数量'),
+    '#type' => 'textfield',
+    '#default_value' => 10,
+    '#weight' => -1000,
+    '#description' => t('solr_stats', '默认显示 10 条明细，最大尽量不要超过 1000 条')
+  );
+
   $form['fields']['param']['stats.field'] = array(
     '#title' => t('solr_stats', '汇总统计'),
     '#type' => 'textfield',
